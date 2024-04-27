@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.css" />
+
+
+    <title>Document</title>
+    <style>
+        div {
+            display: flex;
+        }
+
+        /* CSS */
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 7px 4px;
+            /* Margin between the button container and other elements */
+        }
+
+        .button-20 {
+            appearance: button;
+            background-color: #49ce4e;
+            background-image: linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, 0));
+            border: 1px solid #49ce4e;
+            /* Corrected the syntax error */
+            border-radius: 1rem;
+            box-shadow: rgba(255, 255, 255, 0.15) 0 1px 0 inset, rgba(46, 54, 80, 0.075) 0 1px 1px;
+            box-sizing: border-box;
+            color: #FFFFFF;
+            cursor: pointer;
+            display: inline-block;
+            font-family: Inter, sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            line-height: 1.5;
+            margin: 1.5%;
+            padding: .5rem 1rem;
+            text-align: center;
+            text-transform: none;
+            transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            vertical-align: middle;
+        }
+
+        .button-20:focus:not(:focus-visible),
+        .button-20:focus {
+            outline: 0;
+        }
+
+        .button-20:hover {
+            background-color: #40b92b;
+            border-color: #40b92b;
+        }
+
+        .button-20:focus {
+            background-color: #40b92b;
+            border-color: #40b92b;
+            box-shadow: rgba(255, 255, 255, 0.15) 0 1px 0 inset, rgba(46, 54, 80, 0.075) 0 1px 1px, rgba(104, 101, 235, 0.5) 0 0 0 .2rem;
+        }
+
+        .button-20:active {
+            background-color: #40b92b;
+            background-image: none;
+            border-color: #40b92b;
+            box-shadow: rgba(46, 54, 80, 0.125) 0 3px 5px inset;
+        }
+
+        .button-20:active:focus {
+            box-shadow: rgba(46, 54, 80, 0.125) 0 3px 5px inset, rgba(104, 101, 235, 0.5) 0 0 0 .2rem;
+        }
+
+        .button-20:disabled {
+            background-image: none;
+            box-shadow: none;
+            opacity: .65;
+            pointer-events: none;
+        }
+
+        #map-container {
+            width: 1200px;
+            /* Set width of the container */
+            margin: 20px auto;
+            /* Add margin at the top and bottom, and center horizontally */
+        }
+
+        #map {
+            height: 500px;
+            /* Set height of the map */
+            width: 100%;
+            /* Set width of the map to fill the container */
+        }
+
+        #button-container {
+            display: flex;
+            justify-content: center;
+            /* Horizontally center the buttons */
+            margin-top: 20px;
+            /* Add margin at the top */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="samir" style="text-align: center; display: flex; justify-content: center; align-items: center;">
+        <h2>Optimal path : </h2>
+    </div>
+    <p>choice your destinations in map : </p>
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
+
+    <div id="button-container" class="button-container">
+        <button class="button-20" id="submitBtn" role="button">Calculate Route</button>
+        <button class="button-20" id="clearBtn" role="button">Clear</button>
+    </div>
+
+    <div id="addedPoints"></div>
+
+    <script>
+        var map = L.map( "map" ).setView( [ 36.7515, 5.0558 ], 8 );
+        L.tileLayer( 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        } ).addTo( map );
+
+        let addedPoints = []; // Array to store coordinates of added points
+        let routeControl;
+
+        // Function to print added points
+        function printAddedPoints() {
+            let addedPointsElement = document.getElementById( "addedPoints" );
+            addedPointsElement.innerHTML = "<h3>Added Points:</h3>";
+            addedPoints.forEach( point => {
+                addedPointsElement.innerHTML += `<p>Latitude: ${point.latitude}, Longitude: ${point.longitude}</p>`;
+            } );
+        }
+
+        // Function to calculate and display the route
+        function calculateRoute() {
+            if ( routeControl ) {
+                map.removeControl( routeControl );
+            }
+            let waypoints = addedPoints.map( point => L.latLng( point.latitude, point.longitude ) );
+            routeControl = L.Routing.control( {
+                waypoints: waypoints,
+                routeWhileDragging: true
+            } ).addTo( map );
+        }
+
+        function clearMap() {
+            // Remove the route control from the map
+            if ( routeControl ) {
+                map.removeControl( routeControl );
+                routeControl = null;
+            }
+
+            // Remove all markers from the map
+            map.eachLayer( function ( layer ) {
+                if ( layer instanceof L.Marker ) {
+                    map.removeLayer( layer );
+                }
+            } );
+
+            // Clear the addedPoints array
+            addedPoints = [];
+
+            // Clear the addedPoints display
+            document.getElementById( "addedPoints" ).innerHTML = "<h3>Added Points:</h3>";
+        }
+
+        // Function to handle click event on submit button
+        document.getElementById( "submitBtn" ).addEventListener( "click", function () {
+            calculateRoute(); // Calculate and display the route
+        } );
+
+        // Function to handle click event on clear button
+        document.getElementById( "clearBtn" ).addEventListener( "click", function () {
+            clearMap(); // Calculate and display the route
+        } );
+
+        map.on( 'click', ( event ) => {
+            let lat = event.latlng.lat;
+            let lng = event.latlng.lng;
+            console.log( event.latlng );
+            L.marker( [ lat, lng ] ).addTo( map );
+            addedPoints.push( {
+                latitude: lat,
+                longitude: lng
+            } ); // Store the coordinates of added points
+            printAddedPoints(); // Print added points
+        } );
+    </script>
+</body>
+
+</html>

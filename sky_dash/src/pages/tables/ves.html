@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Skydash Admin</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- CSS styles -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #map-container {
+            width: 100%;
+            margin: 20px auto;
+        }
+
+        #map {
+            height: 500px;
+        }
+
+        #button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            margin-right: 10px;
+            border-radius: 5px;
+            background-color: #7fcc72;
+            color: white;
+            font-size: 16px;
+            padding: 10px 20px;
+            font-family: 'Merriweather';
+        }
+
+        #addedPoints {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+        <div id="button-container">
+            <button id="submitBtn">Calculate Route</button>
+            <button id="clearBtn">Clear</button>
+        </div>
+        <div id="addedPoints"></div>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map( "map" ).setView( [ 36.7515, 5.0558 ], 8 );
+        L.tileLayer( 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        } ).addTo( map );
+
+        let addedPoints = []; // Array to store coordinates of added points
+        let routeControl;
+
+        // Function to print added points
+        function printAddedPoints() {
+            let addedPointsElement = document.getElementById( "addedPoints" );
+            addedPointsElement.innerHTML = "<h3>Added Points:</h3>";
+            addedPoints.forEach( point => {
+                addedPointsElement.innerHTML += `<p>Latitude: ${point.latitude}, Longitude: ${point.longitude}</p>`;
+            } );
+        }
+
+        // Function to calculate and display the route
+        function calculateRoute() {
+            if ( routeControl ) {
+                map.removeControl( routeControl );
+            }
+            let waypoints = addedPoints.map( point => L.latLng( point.latitude, point.longitude ) );
+            routeControl = L.Routing.control( {
+                waypoints: waypoints,
+                routeWhileDragging: true
+            } ).addTo( map );
+        }
+
+        function clearMap() {
+            // Remove the route control from the map
+            if ( routeControl ) {
+                map.removeControl( routeControl );
+                routeControl = null;
+            }
+
+            // Remove all markers from the map
+            map.eachLayer( function ( layer ) {
+                if ( layer instanceof L.Marker ) {
+                    map.removeLayer( layer );
+                }
+            } );
+
+            // Clear the addedPoints array
+            addedPoints = [];
+
+            // Clear the addedPoints display
+            document.getElementById( "addedPoints" ).innerHTML = "<h3>Added Points:</h3>";
+        }
+
+        // Function to handle click event on submit button
+        document.getElementById( "submitBtn" ).addEventListener( "click", function () {
+            calculateRoute(); // Calculate and display the route
+        } );
+
+        // Function to handle click event on clear button
+        document.getElementById( "clearBtn" ).addEventListener( "click", function () {
+            clearMap(); // Calculate and display the route
+        } );
+
+        map.on( 'click', ( event ) => {
+            let lat = event.latlng.lat;
+            let lng = event.latlng.lng;
+            console.log( event.latlng );
+            L.marker( [ lat, lng ] ).addTo( map );
+            addedPoints.push( { latitude: lat, longitude: lng } ); // Store the coordinates of added points
+            printAddedPoints(); // Print added points
+        } );
+    </script>
+</body>
+
+</html>
